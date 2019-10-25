@@ -15,55 +15,67 @@ using namespace glm;
 
 #include "../src/shader.hpp"
 
-class Object {
+#define FLOATS_PER_VERTEX 3
 
-  public:
-    GLuint shaderProgram;
+class Object {
+private:
+
+    int numPoints;
+    GLenum mode;
     GLuint vao;
     GLuint vertexBuffer;
+    GLuint shaderProgram;
 
-    Object() {
-        vao = 0;
-        vertexBuffer = 0;
-        shaderProgram = 0;
-    }
-
-    Object(GLfloat vertices[], GLuint shaderProgram) {
-        shaderProgram = shaderProgram;
-
-    	glGenVertexArrays(1, &vao);
+    void bind() {
         glBindVertexArray(vao);
-
-    	glGenBuffers(1, &vertexBuffer);
-    	glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
-    	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+        glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
     }
 
-    void destroy() {
-        glDeleteBuffers(1, &vertexBuffer);
-    	glDeleteVertexArrays(1, &vao);
-    	glDeleteProgram(shaderProgram);
+public:
+
+    void init(int numPoints, GLenum mode) {
+        this->numPoints = numPoints;
+        this->mode = mode;
+
+        glGenVertexArrays(1, &vao);
+    	glBindVertexArray(vao);
+        glGenBuffers(1, &vertexBuffer);
+        glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
+    }
+
+    void setShaders(GLuint programID) {
+        shaderProgram = programID;
+    }
+
+    void setData(GLfloat vertexBufferData[]) {
+        bind();
+        glBufferData(GL_ARRAY_BUFFER, sizeof(vertexBufferData)*numPoints*FLOATS_PER_VERTEX, vertexBufferData, GL_STATIC_DRAW);
     }
 
     void render() {
-        glBindVertexArray(vao);
+        bind();
         // Use our shader
-        glUseProgram(shaderProgram);
+		glUseProgram(shaderProgram);
 
-        // 1rst attribute buffer : vertices
-        glEnableVertexAttribArray(0);
-        glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+		glEnableVertexAttribArray(0);
+		glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
 
-        // Draw the triangle !
-        glDrawArrays(GL_TRIANGLES, 0, 3); // 3 indices starting at 0 -> 1 triangle
+		// Draw the object !
+		glDrawArrays(mode, 0, numPoints);
 
-        //glDisableVertexAttribArray(0);
+		glDisableVertexAttribArray(0);
+    }
+
+    void cleanup() {
+    	glDeleteBuffers(1, &vertexBuffer);
+    	glDeleteVertexArrays(1, &vao);
+    	glDeleteProgram(shaderProgram);
     }
 };
 
-Object* triangle1 = new Object();
-Object* triangle2 = new Object();
+Object triangle1;
+Object triangle2;
 
 
 /* Initialise window, VAOs, and Shaders */
@@ -115,16 +127,19 @@ int init() {
 		 1.0f, -1.0f, 0.0f,
 		 0.0f,  0.0f, 0.0f,
 	};
-
     GLfloat t2[] = {
 		-1.0f, 1.0f, 0.0f,
 		 1.0f, 1.0f, 0.0f,
 		 0.0f,  0.0f, 0.0f,
 	};
 
-    triangle1 = new Object(t1, redProgramID);
+    triangle1.init(3, GL_TRIANGLES);
+    triangle1.setData(t1);
+    triangle1.setShaders(redProgramID);
 
-    triangle2 = new Object(t2, yellowProgramID);
+    triangle2.init(3, GL_TRIANGLES);
+    triangle2.setData(t2);
+    triangle2.setShaders(yellowProgramID);
 
     // Succesful initialsation
     return 0;
@@ -134,8 +149,8 @@ void draw() {
     // Clear the screen
     glClear( GL_COLOR_BUFFER_BIT );
 
-    triangle1->render();
-    triangle2->render();
+    triangle1.render();
+    triangle2.render();
 
     // Swap buffers
     glfwSwapBuffers(window);
@@ -156,8 +171,8 @@ int main( void )
 	while( glfwGetKey(window, GLFW_KEY_ESCAPE ) != GLFW_PRESS &&
 		   glfwWindowShouldClose(window) == 0 );
 
-    triangle1->destroy();
-    triangle2->destroy();
+    triangle1.cleanup();
+    triangle2.cleanup();
 	// Close OpenGL window and terminate GLFW
 	glfwTerminate();
 	return 0;
