@@ -119,9 +119,10 @@ int init() {
 	glClearColor(0.0f, 0.0f, 0.4f, 0.0f);
 
 	// Create and compile our GLSL program from the shaders
-	GLuint programID = LoadShaders( "../main/triangle.vert", "../main/triangle.frag" );
+	GLuint redProgramID = LoadShaders( "../main/triangle.vert", "../main/triangle.frag" );
+    GLuint yellowProgramID = LoadShaders( "../main/triangle.vert", "../main/yellow.frag" );
 
-	static const GLfloat g_vertex_buffer_data[] = {
+	GLfloat t1[] = {
 		-1.0f, -1.0f, 0.0f,
 		 1.0f, -1.0f, 0.0f,
 		 0.0f,  0.0f, 0.0f,
@@ -132,9 +133,13 @@ int init() {
 		 0.0f,  0.0f, 0.0f,
 	};
 
-    triangle.init();
-    triangle.setData(g_vertex_buffer_data);
-    triangle.setShaders(programID);
+    triangle1.init(3, GL_TRIANGLES);
+    triangle1.setData(t1);
+    triangle1.setShaders(redProgramID);
+
+    triangle2.init(3, GL_TRIANGLES);
+    triangle2.setData(t2);
+    triangle2.setShaders(yellowProgramID);
 
     // Successful initialisation
     return 0;
@@ -144,7 +149,8 @@ void draw() {
     // Clear the screen
     glClear( GL_COLOR_BUFFER_BIT );
 
-    triangle.render();
+    triangle1.render();
+    triangle2.render();
 
     // Swap buffers
     glfwSwapBuffers(window);
@@ -164,7 +170,8 @@ int main( void )
 	while( glfwGetKey(window, GLFW_KEY_ESCAPE ) != GLFW_PRESS &&
 		   glfwWindowShouldClose(window) == 0 );
 
-    triangle.cleanup();
+    triangle1.cleanup();
+    triangle2.cleanup();
 	// Close OpenGL window and terminate GLFW
 	glfwTerminate();
 	return 0;
